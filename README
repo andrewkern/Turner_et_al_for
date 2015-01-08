@@ -1,0 +1,32 @@
+This is the README file for the GitHub repository for the population genetic analyses performed in Turner et al.'s study of the foraging gene (for) in Drosophila melanogaster.
+
+This repository contains the following programs:
+
+rankGenesByPiOverDiv.py -- a python script that calculates the ratio of nucleotide diversity (pi) to divergence in each gene, then ranks genes according to these values.
+polyDivSlidingForChr.py -- a python script that calculates the ratio of nucleotide diversity to divergence in sliding windows accross a chromosome.
+tajimasDSlidingForChr.py -- a python script that calculates Tajima's D in sliding windows accross a chromosome.
+silReplPoly.rb -- a ruby script that estimates the number of segregating sites and nucleotide diversity within an entire coding sequence, as well as at synonymous and nonsynonymous sites only.
+unpolarizedMK.rb -- a ruby script that performs an MK test for each gene for which the user provides both a population sample and an outgroup.
+polarizedMK.rb -- a ruby script that performs a polarized MK test for each gene for which the user provides both a population sample and two outgroups (one with an older divergence from the ingroup species). By using two outgroups this test is able to infer which substitutions occurred in the branch leading to the ingroup species.
+pgStatsBed -- a C program that computes the values of various population genetic summary statistics in regions of a chromosome specified by the user in a BED file. All required files are included in the directory along with a Makefile that can be used to compile the program.
+
+Instructions for command line usage of each of these programs can be obtained by running the program without any arguments. The Ruby scripts may not work on versions of ruby older than 2.1. The python scripts utilize two file formats that require brief explanation. The first is a tab-delimited file containing derived allele frequencies with a .daf extension. Here are a few example lines:
+
+bp      derivedState    ancestralState  derivedFreq      sampleSize
+0       ?       t       0       20
+1       ?       t       0       21
+2       c       a       2       22
+3       a       g       21       21
+...
+
+The first line is the header (required). Each of the remaining lines represents one site in the chromosome. The first field is the chromosomal location (zero-based, such that the first position is denoted by '0'), the second is the derived allele (or '?' if the sites is monomorphic, or 'n' if the site is to be considered as missing data), the third is the inferred ancestral state (or 'n' if the state could not be inferred or the site is to be considered as missing data), the fourth is the derived allele frequency (a number between zero and the sample size), and the fifth is the sample size. Lines 0 and 1 above represents monomorphic sites, while lines 2 and 3 represent a SNP and a fixed substitution, respectively.
+
+These python scripts also use a tab-delimited file that demarcates regions that should be omitted from all population genetic analyses (e.g. those masked by RepeatMasker). This file is in BED format: the first three positions are the chromosome, the start of the masked region, and the end of the masked region. There are additional optional fields but they are ignored by this program. A quirk of BED files is that the starting position of each region is zero-based, but the ending position is one-based. For example, a region including all base pairs from the first in chromosome X to the 1000th position is expressed as follows:
+
+chrX	0	1000
+
+BED files are also used by the program pgStatsBed, in this case to specificy the regions of the genome in which population summary statistics are to be computed. More information on the BED file format is available on the UCSC Genome Browswer (http://genome.ucsc.edu/FAQ/FAQformat.html). It essential that the formatting of chromosome names in any input to pgStatsBed or the python scripts be consistent (i.e., if the prefix "chr" is used it must be used throughout every input file).
+
+The ruby scripts in this repository all require alignments of coding sequences from a population sample, and the MK test scripts additionally require alignments of the reference genome with outgroup species in a separate directory but with the same file name. These are all fasta files.
+
+Many of the programs in this repository use inferred ancestral sequence information. For the analysis performed by Turner et al., the ancestral sequence used was that described by Kolaczkowski et al. (2011, Genetics, Jan;187(1):245-60). The population genomic data for this analysis was obtained by aligning the 154 DGRP (http://dgrp2.gnets.ncsu.edu/) lines sequenced by Illumina technology. These reads were aligned using the aln command from version XX of bwa (with -n 0.1), followed by the sampe command. Version XX samtools was then used to convert the .sam files to .bam format, and separate .bam files from the same line were sorted and merged via samtools sort and samtools merge, respectively. These .bam files were then converted to .bcf format using version XX of bcftools and the following command: samtools mpileup -uf refGenome.fasta inFile.bam.sorted | bcftools view -cgb > outFile.bcf ). These .bcf files were then converted into .fastq files using: bcftools view inFile.bcf | vcfutils.pl vcf2fq –minQ 50.0 -l 15 > outFile.fastq). The .fastq files were transformed into .fasta format using the seqtk tool box (seqtk seq -a -q 50 -n N inFile.fastq > outFile.fasta) [https://github.com/lh3/seqtk].
